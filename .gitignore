@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.env.*
+!.env.example
+*.key
+*auth.json
+config.json
+backups/
+.DS_Store
