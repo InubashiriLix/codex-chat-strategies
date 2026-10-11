@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Install chat commands; never copy account credentials into the repository."""
+"""Install in-chat skills and legacy prompt compatibility files."""
 import argparse
 import json
 import os
 from pathlib import Path
 import shutil
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -103,11 +104,18 @@ def main():
                 write_file(skill/source.relative_to(REPO/'skills'/f'strategy-{mode}'), content, backups)
         prompt = (REPO/'prompts'/f'{mode}.md').read_text().replace('{{SKILL_PATH}}', str(skill/'SKILL.md'))
         write_file(codex/'prompts'/f'{mode}.md', prompt, backups)
-    print('Installed: ' + ', '.join('/prompts:' + mode for mode in modes))
-    print('Restart Codex once to load the commands. Use /model to choose your main model.')
+    write_file(data/'doctor.py', (REPO/'scripts/doctor.py').read_text(), backups)
+    print('Installed skills: ' + ', '.join('$strategy-' + mode for mode in modes))
+    print('In Codex, use /skills → List skills, or type the skill name above.')
+    print('Legacy /prompts:* files are optional compatibility files; some CLIs do not support them.')
+    print('If skills do not appear, restart Codex. Use /model to choose your main model.')
     if not args.openai_only:
         print(f'DeepSeek key setup (hidden local input): python3 "{data}/setup-key.py"')
     print(f'Updated files are backed up locally under {backups}; no model requests were sent.')
+    check = ['python3', str(data/'doctor.py'), '--codex-home', str(codex), '--data-dir', str(data)]
+    if args.openai_only:
+        check.append('--openai-only')
+    print('Validate native discovery: ' + shlex.join(check))
 
 
 if __name__ == '__main__':

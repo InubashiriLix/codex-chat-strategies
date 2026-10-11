@@ -19,7 +19,10 @@ class DeploymentTests(unittest.TestCase):
             original = '# preserve me\nmodel = "chosen-model"\n'
             (codex/'config.toml').write_text(original)
             command = [str(ROOT/'deploy.sh'), '--openai-only', '--codex-home', str(codex), '--data-dir', str(data)]
-            subprocess.run(command, check=True, capture_output=True)
+            result = subprocess.run(command, check=True, capture_output=True, text=True)
+            self.assertIn('Installed skills: $strategy-openai, $strategy-solo', result.stdout)
+            self.assertIn('/skills', result.stdout)
+            self.assertTrue((data/'doctor.py').exists())
             prompt = codex/'prompts/openai.md'
             self.assertIn(str(codex/'skills/strategy-openai/SKILL.md'), prompt.read_text())
             self.assertIn('$ARGUMENTS', prompt.read_text())
