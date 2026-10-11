@@ -61,6 +61,8 @@ $strategy-solo 修复这个拼写错误
 
 DeepSeek 后台任务失败时，本地适配层按 job ID 保存不含密钥和原始任务内容的错误分类。`get_deepseek_diagnostic` 可在另一个 Codex 会话中读取该分类；`check_deepseek_balance` 只检查官方 API 余额是否可用，不发起模型请求。单任务 token 预算、余额不足（HTTP 402）、鉴权失败（401）和限速（429）会分别报告。
 
+新任务还会保存私有、限长的原任务检查点（仅在本机，文件权限 0600）。预算或轮次限制导致失败时，`get_deepseek_resume_packet(job_id)` 汇总原目标、工作区改动与待审查事务；Codex 检查已完成部分后，用 `start_deepseek_resume(job_id, remaining_task, state_token)` 启动一次精简续做。`state_token` 来自最新恢复包；工作区状态变化后需重新检查。每条任务链最多自动恢复一次；工作区身份不符、仍有待确认事务、任务仍在运行或错误属于余额/鉴权/网络等情况均阻止恢复。`/compact` 只整理 Codex 主会话，不能续接已结束的 DeepSeek 会话。安装前发生的旧任务没有检查点，需人工结合文件重建剩余工作。
+
 ## DeepSeek 密钥
 
 完成部署后，在本地终端执行一次隐藏输入设置（不要把 key 发到聊天或写进仓库）：
