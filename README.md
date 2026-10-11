@@ -1,6 +1,6 @@
 # Codex Chat Strategies
 
-在 **Codex 聊天输入框**里切换策略，保留当前会话。无需用不同终端命令启动 Codex。
+在 **Codex 聊天输入框**里用技能切换策略，保留当前会话。无需用不同终端命令启动 Codex。
 
 | Codex 输入框入口 | 行为 |
 | --- | --- |
@@ -37,7 +37,7 @@ cd codex-chat-strategies
 ./deploy.sh --openai-only
 ```
 
-安装后输入 `/skills` 或 `$strategy-` 检查入口；看不到时重启 Codex。之后直接在同一会话切换：
+安装后输入 `/skills` 或 `$strategy-` 检查入口；看不到时退出安装前打开的 Codex 会话，再启动新会话。之后可在同一会话切换：
 
 ```text
 $strategy-openai 为这个模块增加缓存
@@ -45,6 +45,8 @@ $strategy-deepseek 按现有接口补全 CRUD
 $strategy-solo 修复这个拼写错误
 /model
 ```
+
+如果看到 `Unrecognized command '/prompts:deepseek'`，改用 `$strategy-deepseek`：输入 `$strategy` 后从列表选择「DeepSeek 协作」。`/prompt` 不是本项目命令。若新会话的 `$` 技能列表仍没有这些入口，检查 `CODEX_HOME` 是否指向安装时使用的目录，或用 `./deploy.sh --codex-home /实际目录` 重新安装。
 
 策略不能自动切换主模型。请用 `/model` 选定规划审查用的强模型，或者小任务使用的轻量模型。
 子代理模型受账号可用性限制；默认 Luna，复杂任务可用 Sol。模型不可用会报告，不静默换供应商。
