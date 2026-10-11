@@ -92,7 +92,7 @@ def main():
     modes = ('openai', 'solo') if args.openai_only else MODES
     if not args.openai_only:
         python = install_backend(data)
-        for name in ('chat-mcp.py', 'setup-key.py'):
+        for name in ('chat-mcp.py', 'parallel_deepseek.py', 'setup-key.py'):
             write_file(data/name, (REPO/'scripts'/name).read_text(), backups)
         # Register before exposing the command. A failure leaves existing commands untouched.
         run(python, REPO/'scripts/register-mcp.py', codex, data)

@@ -53,6 +53,7 @@ class DeploymentTests(unittest.TestCase):
             doc = tomlkit.parse(config.read_text())
             self.assertEqual(doc['model'], 'chosen')
             self.assertEqual(doc['mcp_servers']['other']['command'], 'other-tool')
+            self.assertEqual(doc['mcp_servers']['strategy_deepseek']['tools']['get_deepseek_parallel_result']['approval_mode'], 'approve')
             self.assertIn('# existing comment', config.read_text())
             self.assertEqual(credentials.read_bytes(), before)
             self.assertEqual(len(list((data/'backups').iterdir())), 1)

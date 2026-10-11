@@ -19,10 +19,19 @@ servers = doc.setdefault('mcp_servers', tomlkit.table())
 existing = servers.get('strategy_deepseek')
 command = str(data/'runtime/bin/python')
 entry = str(data/'chat-mcp.py')
+result_tools = (
+    'get_deepseek_result', 'get_deepseek_recovery', 'acknowledge_deepseek_mutations',
+    'get_deepseek_parallel_result', 'get_deepseek_parallel_recovery',
+    'acknowledge_deepseek_parallel_mutations',
+)
 if existing is not None:
     expected = existing.get('command') == command and list(existing.get('args', [])) == [entry]
     if not expected:
         raise SystemExit('strategy_deepseek already belongs to another installation; refusing to overwrite.')
+    tool_settings = existing.setdefault('tools', tomlkit.table())
+    for tool in result_tools:
+        if tool not in tool_settings:
+            tool_settings[tool] = {'approval_mode': 'approve'}
 else:
     servers['strategy_deepseek'] = {
         'command': command, 'args': [entry], 'enabled': True,
@@ -30,8 +39,7 @@ else:
         'default_tools_approval_mode': 'writes',
         'env_vars': ['DEEPSEEK_API_KEY', 'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'NO_PROXY',
                      'http_proxy', 'https_proxy', 'all_proxy', 'no_proxy', 'SSL_CERT_FILE', 'SSL_CERT_DIR'],
-        'tools': {tool: {'approval_mode': 'approve'} for tool in
-                  ('get_deepseek_result', 'get_deepseek_recovery', 'acknowledge_deepseek_mutations')},
+        'tools': {tool: {'approval_mode': 'approve'} for tool in result_tools},
     }
 updated = tomlkit.dumps(doc)
 if updated != original:
