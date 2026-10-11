@@ -27,6 +27,7 @@ DeepSeek 看不到主会话和项目指令；传入完整但精简的任务约�
 每个并行结果有修改时，按 batch_id 和 lane 调用 get_deepseek_parallel_recovery，检查该 lane 实际文件后用准确 transaction_ids 调用 acknowledge_deepseek_parallel_mutations。使用 inspect_deepseek_parallel 核对各 lane 的 Git 状态；主代理逐路整合并验证。所有 lane 的改动均已整合、工作区干净且无未确认恢复记录后，调用 close_deepseek_parallel 释放 worktree；条件不满足时保留现场。不要把五个 lane 当成共享文件夹，也不要从未整合的 lane 静默覆盖主工作区。
 结果有修改时调用 get_deepseek_recovery，检查实际文件后用准确 transaction_ids 调用 acknowledge_deepseek_mutations。
 中断或重连后也先恢复检查。鉴权、额度或持续网络失败时报告，不反复重试消耗额度。
+DeepSeek 失败时先保留并检查实际改动，再按 job_id 调用 get_deepseek_diagnostic 取得跨会话保存的失败类别；需要确认余额时调用 check_deepseek_balance，它只返回可用性和 HTTP 状态，不调用模型、不显示密钥。单任务本地 token 预算错误不等于欠费；把未完成工作切成更小的任务，提示 DeepSeek 用有界命令输出和针对性搜索，避免反复读取完整日志或大文件。不要把余额、网络、限速和本地预算混为一谈。
 配置或鉴权失败时停止外部分派；可以继续必要的只读分析，不静默把大量实现转回昂贵模型。
 DeepSeek 返回不能作为验收证明。最终由主模型审查实际改动、验证证据和任务完成情况。
 

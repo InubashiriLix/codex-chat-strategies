@@ -59,6 +59,8 @@ $strategy-solo 修复这个拼写错误
 
 例如输入 `$strategy-deepseek 把这五个彼此独立的模块分别交给五个 DeepSeek 任务并行处理`。准备槽位只创建本地 worktree；实际启动任务后才调用 DeepSeek API。每路结果需要单独审查和整合，确认后再关闭槽位。
 
+DeepSeek 后台任务失败时，本地适配层按 job ID 保存不含密钥和原始任务内容的错误分类。`get_deepseek_diagnostic` 可在另一个 Codex 会话中读取该分类；`check_deepseek_balance` 只检查官方 API 余额是否可用，不发起模型请求。单任务 token 预算、余额不足（HTTP 402）、鉴权失败（401）和限速（429）会分别报告。
+
 ## DeepSeek 密钥
 
 完成部署后，在本地终端执行一次隐藏输入设置（不要把 key 发到聊天或写进仓库）：

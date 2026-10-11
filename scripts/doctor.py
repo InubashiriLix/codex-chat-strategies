@@ -99,7 +99,9 @@ def main():
         runtime = data_dir/'runtime/bin/python'
         wrapper = data_dir/'chat-mcp.py'
         parallel = data_dir/'parallel_deepseek.py'
-        if (not runtime.exists() or not wrapper.exists() or not parallel.exists() or mcp.get('enabled', True) is False
+        diagnostics = data_dir/'deepseek_diagnostics.py'
+        if (not runtime.exists() or not wrapper.exists() or not parallel.exists() or not diagnostics.exists()
+                or mcp.get('enabled', True) is False
                 or mcp.get('command') != str(runtime) or mcp.get('args') != [str(wrapper)]):
             failures.append('DeepSeek runtime or MCP registration is missing/mismatched')
         else:
