@@ -5,7 +5,7 @@
 | Codex 输入框入口 | 行为 |
 | --- | --- |
 | `$strategy-openai [任务]` | 当前主模型规划、验收；适合时最多三个原生子代理并行，日常工作优先 Luna。 |
-| `$strategy-deepseek [任务]` | 当前主模型规划、验收；适合时最多五个 DeepSeek 任务在独立 Git worktree 中并行。 |
+| `$strategy-deepseek [任务]` | 当前主模型规划、验收；适合时最多五个 DeepSeek 任务在不同仓库或模块目录中并行，可选 Git worktree 隔离。 |
 | `$strategy-solo [任务]` | 当前模型直接执行，不委派；用内置 `/model` 自己选模型。 |
 
 不附带任务时只切换策略；附带任务时直接执行。策略持续到当前会话下一次显式切换，不修改其他会话。
@@ -55,9 +55,18 @@ $strategy-solo 修复这个拼写错误
 
 并发数是上限，不是每次任务的目标。小任务直接完成；只有工作可独立推进、节省的时间足以抵消额外模型用量和整合成本时才并行。相关返工优先交给原来的 Luna 子代理，复用它已掌握的上下文；不再相关的任务才新建代理。委派只传必要路径、约束和验收条件，避免重复发送长日志与完整会话。
 
-同时改代码时各写入代理使用独立 Git worktree，主代理审查并整合结果。DeepSeek 执行器在同一目录一次只允许运行一个任务；新增的五路槽位各自使用独立 worktree，因此可以并行。五路准备操作要求主工作区位于 Git 仓库根目录且没有未提交改动；无法安全建立共同基线时改为串行。运行中的 DeepSeek 任务可以补充指令，任务结束后不能复用该会话。DeepSeek API 调用独立计费；主代理的调度与验收仍会消耗 Codex Pro 周额度。
+DeepSeek 默认直接在指定任务目录中读写。不同仓库、互不重叠的模块目录可以并行；无需共同 Git 基线、干净工作区、仓库根目录或先创建 worktree。已有未提交改动和非 Git 目录均可使用。最多五路；同一或父子目录的任务依次执行，主代理审查实际修改并完成整体验收。DeepSeek API 调用独立计费；主代理的调度与验收仍会消耗 Codex Pro 周额度。
 
-例如输入 `$strategy-deepseek 把这五个彼此独立的模块分别交给五个 DeepSeek 任务并行处理`。准备槽位只创建本地 worktree；实际启动任务后才调用 DeepSeek API。每路结果需要单独审查和整合，确认后再关闭槽位。
+例如输入 `$strategy-deepseek 在 /projects/frontend 和 /projects/backend 并行实现登录功能`。Codex 可直接调用：
+
+```text
+start_deepseek_parallel(task="实现登录界面", workspace="/projects/frontend")
+start_deepseek_parallel(task="实现登录接口", workspace="/projects/backend")
+```
+
+`batch_id` 和 `lane` 自动分配；启动返回实际目录和 job ID。目录可根据已知项目结构推断，无需用户先整理成一个工作区。默认 MCP 目录与目标仓库不同也可显式指定 `workspace`。每个槽位在批次内绑定固定目录；收取结果并审查恢复记录后可在同目录复用。关闭直接模式批次只释放槽位，不删除文件，也不要求提交修改。
+
+需要同仓库隔离并行时，显式调用 `prepare_deepseek_parallel(mode="worktree")` 使用原来的五路 Git worktree 模式；仅此模式要求干净的 Git 根目录与已提交 HEAD。准备操作不调用模型；每路改动需要审查整合，工作区干净且恢复记录已确认后才可关闭删除 worktree。直接模式不需要准备步骤，也可用 `prepare_deepseek_parallel(workspaces=["/projects/frontend", "/projects/backend"])` 提前绑定目录。
 
 DeepSeek 后台任务失败时，本地适配层按 job ID 保存不含密钥和原始任务内容的错误分类。`get_deepseek_diagnostic` 可在另一个 Codex 会话中读取该分类；`check_deepseek_balance` 只检查官方 API 余额是否可用，不发起模型请求。单任务 token 预算、余额不足（HTTP 402）、鉴权失败（401）和限速（429）会分别报告。
 
