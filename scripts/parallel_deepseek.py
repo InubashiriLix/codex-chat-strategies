@@ -5,7 +5,7 @@ request is made while preparing or inspecting slots.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path
@@ -18,6 +18,7 @@ from deepseek_mcp.execution_profile import CODING_PROFILE, READONLY_PROFILE, con
 from deepseek_mcp.job_manager import DeepSeekJobManager, JobError
 from deepseek_mcp.model_selection import resolve_profile
 from deepseek_mcp.transaction_recovery import acknowledge_with_lease, load_recovery_config, query_with_lease
+from workspace_config import load_workspace_config
 
 SLOT_COUNT = 5
 
@@ -134,9 +135,8 @@ class ParallelDeepSeek:
         return slot
 
     def _config(self, slot: Slot, readonly: bool, model: str = "flash") -> Config:
-        config = Config.load()
-        config = replace(config, workspace=slot.path,
-                         expected_workspace_identity=slot.recovery_config.expected_workspace_identity)
+        config = load_workspace_config(
+            slot.path, expected_workspace_identity=slot.recovery_config.expected_workspace_identity)
         config = configure_delegation(config, READONLY_PROFILE if readonly else CODING_PROFILE)
         config.model, config.reasoning_effort = resolve_profile(
             model,

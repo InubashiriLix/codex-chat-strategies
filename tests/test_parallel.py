@@ -1,4 +1,5 @@
 import importlib.util
+from dataclasses import replace
 from pathlib import Path
 import subprocess
 import sys
@@ -122,7 +123,7 @@ class ParallelTests(unittest.TestCase):
                 instance.result_with_usage_claim.return_value = ({"ready": True}, None)
                 managers.append(instance)
                 return instance
-            with patch.object(parallel, "DeepSeekJobManager", side_effect=manager), patch.object(Config, "load", return_value=config), patch.object(
+            with patch.object(parallel, "DeepSeekJobManager", side_effect=manager), patch.object(parallel, "load_workspace_config", side_effect=lambda workspace, **kw: replace(config, workspace=workspace, **kw)), patch.object(
                 parallel, "load_recovery_config", side_effect=AssertionError("explicit paths do not require ping/default workspace")
             ):
                 jobs = [coordinator.start(task="bounded task", workspace=str(path), readonly=(n == 0)) for n, path in enumerate(paths[:5])]
@@ -159,7 +160,7 @@ class ParallelTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "empty"):
                 coordinator.start(task="", workspace=str(repo))
             config = Config(api_key="sk-test-placeholder", workspace=repo)
-            with patch.object(Config, "load", return_value=config), patch.object(parallel.DeepSeekJobManager, "start", return_value={"job_id": "first"}):
+            with patch.object(parallel, "load_workspace_config", side_effect=lambda workspace, **kw: replace(config, workspace=workspace, **kw)), patch.object(parallel.DeepSeekJobManager, "start", return_value={"job_id": "first"}):
                 first = coordinator.start(task="task", workspace=str(repo))
                 for other in (repo, child, alias):
                     with self.assertRaisesRegex(ValueError, "overlapping"):
@@ -195,7 +196,7 @@ class ParallelTests(unittest.TestCase):
             target.mkdir()
             config = Config(api_key="sk-test-placeholder", workspace=default)
             coordinator = parallel.ParallelDeepSeek(base / "data")
-            with patch.object(Config, "load", return_value=config), patch.object(agent_loop, "MAX_TOTAL_TOKENS_PER_RUN", 1), patch(
+            with patch.object(parallel, "load_workspace_config", side_effect=lambda workspace, **kw: replace(config, workspace=workspace, **kw)), patch.object(agent_loop, "MAX_TOTAL_TOKENS_PER_RUN", 1), patch(
                 "deepseek_mcp.execution_lock.DEFAULT_LOCK_DIRECTORY", base / "locks"
             ), patch("deepseek_mcp.transaction_journal.JOURNAL_DIRECTORY", base / "journal"), patch(
                 "deepseek_mcp.server._record_usage", return_value=True
